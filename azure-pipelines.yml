@@ -1,4 +1,5 @@
 # ASP.NET Core (.NET Framework)
+
 # Build and test ASP.NET Core projects targeting the full .NET Framework.
 # Add steps that publish symbols, save build artifacts, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
@@ -8,6 +9,8 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
+  demands: 
+    - npm
 
 variables:
   solution: '**/*.sln'
@@ -15,6 +18,34 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Use .Net Core SDK 3.1.100'
+  inputs:
+    packageType: 'sdk'
+    version: '3.1.100'
+
+- task: Npm@1
+  displayName: 'Run npm install'
+  inputs:
+    command: 'install'
+
+- task: PowerShell@2
+  displayName: 'Compile sass assets'
+  inputs:
+    targetType: 'inline'
+    script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
+
+- task: gulp@1
+  displayName: 'Run gulp tasks'
+  inputs:
+    targets: 
+    enableCodeCoverage: false
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
